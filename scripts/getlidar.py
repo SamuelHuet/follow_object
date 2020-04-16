@@ -26,8 +26,12 @@ class Sonar:
         lidar_data_x = []
         lidar_data_y = []
         for i in range(360):
-            lidar_data_x.append((self.lidar_data[i]*80 * np.cos(i)) + 250)
-            lidar_data_y.append((self.lidar_data[i]*80 * np.sin(i)) + 250)
+            if np.isinf(self.lidar_data[i]):
+                lidar_data_x.append(250)
+                lidar_data_y.append(250)
+            else:
+                lidar_data_x.append((self.lidar_data[i]*50 * np.cos(i)) + 250)
+                lidar_data_y.append((self.lidar_data[i]*50 * np.sin(i)) + 250)
         return lidar_data_x, lidar_data_y
 
     def draw_points(self, lidar_data_x, lidar_data_y):
@@ -39,28 +43,38 @@ class Sonar:
         lidar_data_x = []
         lidar_data_y = []
         for i in range(360):
-            # print(lidar_data_x_old[i])
-            # print(lidar_data_y_old[i])
-            if np.isinf(lidar_data_x_old[i]):
-                lidar_data_x.append(0)
-                lidar_data_y.append(0)
-            else:
-                lidar_data_x.append(int(round(lidar_data_x_old[i])))
-                lidar_data_y.append(int(round(lidar_data_y_old[i])))
+            lidar_data_x.append(int(round(lidar_data_x_old[i])))
+            lidar_data_y.append(int(round(lidar_data_y_old[i])))
         return lidar_data_x, lidar_data_y
 
-    def saveimg(self):
+    def saveimg(self, ):
         self.img.save("LIDAR.PNG")
+
+    def to_line(self):
+
+        lidar_data_x = []
+        lidar_data_y = []
+        for i in range(360):
+            lidar_data_x.append(i+1)
+            if np.isinf(self.lidar_data[i]):
+                lidar_data_y.append(0)
+            else:
+                lidar_data_y.append(self.lidar_data[i]*50)
+        return lidar_data_x, lidar_data_y
+
+
 
 def callback(msg):
     # print(len(msg.ranges))
     sonar = Sonar(msg.ranges)
     sonar.create_template()
     # sonar.generate_fake_data()
-    x, y = sonar.to_polar()
+    x, y = sonar.to_line()
+    # x, y = sonar.to_polar()
     x, y = sonar.round_data(x, y)
     sonar.draw_points(x, y)
     # toto.show()
+    #sonar.show()
     sonar.saveimg()
     rospy.loginfo(rospy.get_caller_id() + "   Image created")
 
