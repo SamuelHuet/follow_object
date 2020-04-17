@@ -1,6 +1,7 @@
 # [Navigation Project](https://github.com/SamuelHuet/simple_navigation_goals)
 
 _[![ROS Melodic](https://img.shields.io/badge/ROS-Melodic-red)](http://wiki.ros.org/melodic/Installation/Ubuntu)_ _[![TurtleBot3](https://img.shields.io/badge/TurtleBot-3-brightgreen)](http://emanual.robotis.com/docs/en/platform/turtlebot3/pc_setup/)_ ![OpenCV](https://img.shields.io/badge/OpenCV-2-yellow) ![LICENSE](https://img.shields.io/badge/LICENSE-Apache%202.0-informational)
+
 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Ros_logo.svg/800px-Ros_logo.svg.png" width="110"> ![MelodicTurtle][melodic-turtle]
 
 >The goal of this projet is to succeed a simplified version of the "Carry my luggage" test, imagined by the [RobotCup@Home](https://athome.robocup.org) contest.
