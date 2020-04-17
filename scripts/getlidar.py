@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import cv2
+from matplotlib import pyplot as plt
 import random
 from PIL import Image
 import numpy as np
@@ -6,9 +8,13 @@ import rospy
 from sensor_msgs.msg import LaserScan
 import os
 
+
 SIZE_FACTOR = 60
 IMAGE_SIZE = 500
 POINT_SIZE = 3
+
+center = [0, 0]
+ref_robot_coor_objet = [0 ,0]
 
 
 class Sonar:
@@ -99,12 +105,34 @@ def callback(msg):
     sonar.draw_points(x, y)
     sonar.saveimg()
     rospy.loginfo(rospy.get_caller_id() + "   Image created")
+    print(opencv_clutch('cercle.png', 'LIDAR.PNG'))
 
 
 def listener():
     rospy.init_node('listenerLidar', anonymous=True)
     sub = rospy.Subscriber('/scan', LaserScan, callback)
     rospy.spin()
+
+
+def opencv_clutch(picture, lidar):
+    img = cv2.imread(lidar,0)
+    #img2 = img.copy()
+    template = cv2.imread(picture,0)
+    #w, h = template.shape[::-1]
+    #img = img2.copy()
+    method = eval('cv2.TM_CCOEFF')
+    res = cv2.matchTemplate(img,template,method)
+    left_top = cv2.minMaxLoc(res)[3]
+    center[0] = left_top[0] + 30
+    center[1] = left_top[1] + 28
+    ref_robot_coor_objet [0] = (center [0] - 250) / 60
+    ref_robot_coor_objet [1] = (center [1] - 250) / 60
+    distance = (np.sqrt(((center[0]-250)**2)+((center[1]-250)**2))) / 60
+    return ref_robot_coor_objet, distance
+
+
+
+
 
 
 if __name__ == '__main__':
