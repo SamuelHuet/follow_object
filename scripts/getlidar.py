@@ -14,9 +14,6 @@ IMAGE_SIZE = 500
 POINT_SIZE = 3
 PATH = os.path.dirname(os.path.abspath(__file__))
 
-center = [0, 0]
-ref_robot_coor_objet = [0 ,0]
-
 
 class Sonar:
 
@@ -105,9 +102,10 @@ def callback(msg):
     sonar.draw_points(x, y)
     sonar.saveimg()
     rospy.loginfo(rospy.get_caller_id() + "   Image created")
-    xy, distance = opencv_clutch('cercle.png', 'LIDAR.PNG')
-    rospy.loginfo(rospy.get_caller_id() + "   X = " + xy[0] + "  Y = " + xy[1])
-    rospy.loginfo(rospy.get_caller_id() + "   Distance to target = " + distance)
+    # print(opencv_clutch('cercle.png', 'LIDAR.PNG'))
+    coord = opencv_clutch('cercle.png', 'LIDAR.PNG')
+    rospy.loginfo(rospy.get_caller_id() + "   X = " + str(coord[0]) + "  Y = " + str(coord[1]))
+    rospy.loginfo(rospy.get_caller_id() + "   Distance to target = " + str(coord[2]))
 
 
 def listener():
@@ -117,6 +115,8 @@ def listener():
 
 
 def opencv_clutch(picture, lidar):
+    center = [0.0, 0.0]
+    ref_robot_coor_objet = [0.0 ,0.0, 0.0]
     img = cv2.imread(PATH + "/" + lidar, 0)
     template = cv2.imread(PATH + "/" + picture, 0)
     method = eval('cv2.TM_CCOEFF')
@@ -124,10 +124,10 @@ def opencv_clutch(picture, lidar):
     left_top = cv2.minMaxLoc(res)[3]
     center[0] = left_top[0] + 30
     center[1] = left_top[1] + 28
-    ref_robot_coor_objet[0] = (center[0] - (IMAGE_SIZE/2)) / SIZE_FACTOR
-    ref_robot_coor_objet[1] = (center[1] - (IMAGE_SIZE/2)) / SIZE_FACTOR
-    distance = (np.sqrt(((center[0]-(IMAGE_SIZE/2))**2)+((center[1]-(IMAGE_SIZE/2))**2))) / SIZE_FACTOR
-    return ref_robot_coor_objet, distance
+    ref_robot_coor_objet[0] = (center[0] - float(IMAGE_SIZE/2)) / float(SIZE_FACTOR)
+    ref_robot_coor_objet[1] = (center[1] - float(IMAGE_SIZE/2)) / float(SIZE_FACTOR)
+    ref_robot_coor_objet[2] = (np.sqrt(((center[0]-(float(IMAGE_SIZE/2)))**2)+((center[1]-(float(IMAGE_SIZE/2)))**2))) / float(SIZE_FACTOR)
+    return ref_robot_coor_objet
 
 
 if __name__ == '__main__':
