@@ -12,6 +12,7 @@ import os
 SIZE_FACTOR = 60
 IMAGE_SIZE = 500
 POINT_SIZE = 3
+PATH = os.path.dirname(os.path.abspath(__file__))
 
 center = [0, 0]
 ref_robot_coor_objet = [0 ,0]
@@ -20,7 +21,6 @@ ref_robot_coor_objet = [0 ,0]
 class Sonar:
 
     def __init__(self, data):
-        self.path = os.path.dirname(os.path.abspath(__file__))
         self.lidar_data = data
         self.img = None
 
@@ -76,7 +76,7 @@ class Sonar:
         return lidar_data_x, lidar_data_y
 
     def saveimg(self, ):
-        self.img.save(self.path + "/LIDAR.PNG")
+        self.img.save(PATH + "/LIDAR.PNG")
 
     def to_line(self):
 
@@ -115,18 +115,18 @@ def listener():
 
 
 def opencv_clutch(picture, lidar):
-    img = cv2.imread(lidar,0)
-    #img2 = img.copy()
-    template = cv2.imread(picture,0)
-    #w, h = template.shape[::-1]
-    #img = img2.copy()
+    img = cv2.imread(PATH + "/" + lidar, 0)
+    # img2 = img.copy()
+    template = cv2.imread(PATH + "/" + picture, 0)
+    # w, h = template.shape[::-1]
+    # img = img2.copy()
     method = eval('cv2.TM_CCOEFF')
-    res = cv2.matchTemplate(img,template,method)
+    res = cv2.matchTemplate(img, template, method)
     left_top = cv2.minMaxLoc(res)[3]
     center[0] = left_top[0] + 30
     center[1] = left_top[1] + 28
-    ref_robot_coor_objet [0] = (center [0] - 250) / 60
-    ref_robot_coor_objet [1] = (center [1] - 250) / 60
+    ref_robot_coor_objet[0] = (center[0] - 250) / 60
+    ref_robot_coor_objet[1] = (center[1] - 250) / 60
     distance = (np.sqrt(((center[0]-250)**2)+((center[1]-250)**2))) / 60
     return ref_robot_coor_objet, distance
 
