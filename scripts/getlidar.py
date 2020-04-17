@@ -23,7 +23,7 @@ class Sonar:
 
     def create_template(self):
         self.img = Image.new("RGB", (IMAGE_SIZE, IMAGE_SIZE), "#FFFFFF")
-        self.img.paste((0, 0, 0), (245, 245, 255, 255))
+        # self.img.paste((0, 0, 0), (245, 245, 255, 255))
 
     def show(self):
         self.img.show()
@@ -33,8 +33,8 @@ class Sonar:
         lidar_data_y_carthesian = [0]*360
         for i in range(360):
             if np.isinf(self.lidar_data[i]):
-                lidar_data_x_carthesian[i] = 250
-                lidar_data_y_carthesian[i] = 250
+                lidar_data_x_carthesian[i] = 501
+                lidar_data_y_carthesian[i] = 501
             else:
                 if x_mirrored is True:
                     lidar_data_x_carthesian[i] = (-(self.lidar_data[i] * SIZE_FACTOR * np.cos(np.radians(i+offset_theta)))) + (IMAGE_SIZE/2)
