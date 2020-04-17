@@ -10,6 +10,7 @@ _[![ROS Melodic](https://img.shields.io/badge/ROS-Melodic-red)](http://wiki.ros.
   - [Rules :](#rules)
         - [Phase one : Tracking](#phase-one--tracking)
         - [Phase two : Homecoming](#phase-two--homecoming)
+        - [About](#about)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
   - [How To](#how-to)
@@ -38,6 +39,8 @@ _[![ROS Melodic](https://img.shields.io/badge/ROS-Melodic-red)](http://wiki.ros.
 >  - The robot remains stationary within 0.3 meters of its starting point.
 >
 >Time will be used to break the equality between the teams that have validated the two phases.
+
+##### About
 
 >For more information about rules and regulations, please refer to [this document](https://robocupathome.github.io/RuleBook/rulebook/master.pdf).
 
