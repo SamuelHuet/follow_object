@@ -5,6 +5,7 @@ import numpy as np
 import math
 import rospy
 from sensor_msgs.msg import LaserScan
+import os
 
 SIZE_FACTOR = 60
 IMAGE_SIZE = 500
@@ -13,6 +14,7 @@ POINT_SIZE = 3
 class Sonar:
 
     def __init__(self, data):
+        self.path = os.path.dirname(os.path.abspath(__file__))
         self.lidar_data = data
         self.img = None
 
@@ -56,7 +58,7 @@ class Sonar:
         return lidar_data_x, lidar_data_y
 
     def saveimg(self, ):
-        self.img.save("LIDAR.PNG")
+        self.img.save(self.path + "/LIDAR.PNG")
 
     def to_line(self):
 
