@@ -2,7 +2,6 @@
 import random
 from PIL import Image
 import numpy as np
-import math
 import rospy
 from sensor_msgs.msg import LaserScan
 import os
@@ -10,6 +9,7 @@ import os
 SIZE_FACTOR = 60
 IMAGE_SIZE = 500
 POINT_SIZE = 3
+
 
 class Sonar:
 
@@ -28,7 +28,7 @@ class Sonar:
     def show(self):
         self.img.show()
 
-    def to_cathesian(self, offset_theta = 0, x_mirrored = False):
+    def to_cathesian(self, offset_theta=0, x_mirrored=False):
         lidar_data_x_carthesian = [0]*360
         lidar_data_y_carthesian = [0]*360
         for i in range(360):
@@ -37,10 +37,17 @@ class Sonar:
                 lidar_data_y_carthesian[i] = 501
             else:
                 if x_mirrored is True:
-                    lidar_data_x_carthesian[i] = (-(self.lidar_data[i] * SIZE_FACTOR * np.cos(np.radians(i+offset_theta)))) + (IMAGE_SIZE/2)
+                    lidar_data_x_carthesian[i] = (-(self.lidar_data[i] *
+                                                    SIZE_FACTOR *
+                                                    np.cos(np.radians(i+offset_theta)))) + (IMAGE_SIZE/2)
                 else:
-                    lidar_data_x_carthesian[i] = (self.lidar_data[i] * SIZE_FACTOR * np.cos(np.radians(i+offset_theta))) + (IMAGE_SIZE/2)
-                lidar_data_y_carthesian[i] = (self.lidar_data[i] * SIZE_FACTOR * np.sin(np.radians(i+offset_theta))) + (IMAGE_SIZE/2)
+                    lidar_data_x_carthesian[i] = (self.lidar_data[i] *
+                                                  SIZE_FACTOR *
+                                                  np.cos(np.radians(i+offset_theta))) + (IMAGE_SIZE/2)
+                lidar_data_y_carthesian[i] = (self.lidar_data[i] *
+                                              SIZE_FACTOR *
+                                              np.sin(np.radians(i+offset_theta))) + (IMAGE_SIZE/2)
+
         return lidar_data_x_carthesian, lidar_data_y_carthesian
 
     def draw_points(self, lidar_data_x, lidar_data_y):
@@ -73,21 +80,21 @@ class Sonar:
         return lidar_data_x, lidar_data_y
 
 
-
-
 def callback(msg):
     sonar = Sonar(msg.ranges)
     sonar.create_template()
-    x, y = sonar.to_cathesian(offset_theta = -90, x_mirrored = True)
+    x, y = sonar.to_cathesian(offset_theta=-90, x_mirrored=True)
     x, y = sonar.round_data(x, y)
     sonar.draw_points(x, y)
     sonar.saveimg()
     rospy.loginfo(rospy.get_caller_id() + "   Image created")
 
+
 def listener():
     rospy.init_node('listenerLidar', anonymous=True)
     sub = rospy.Subscriber('/scan', LaserScan, callback)
     rospy.spin()
+
 
 if __name__ == '__main__':
     listener()
