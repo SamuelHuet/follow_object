@@ -28,7 +28,7 @@ class Sonar:
     def show(self):
         self.img.show()
 
-    def to_cathesian(self, offset_theta=0, x_mirrored=False):
+    def to_cathesian(self, offset_theta=0, y_mirrored=True, x_mirrored=False):
         lidar_data_x_carthesian = [0]*360
         lidar_data_y_carthesian = [0]*360
         for i in range(360):
@@ -36,7 +36,7 @@ class Sonar:
                 lidar_data_x_carthesian[i] = 501
                 lidar_data_y_carthesian[i] = 501
             else:
-                if x_mirrored is True:
+                if y_mirrored is True:
                     lidar_data_x_carthesian[i] = (-(self.lidar_data[i] *
                                                     SIZE_FACTOR *
                                                     np.cos(np.radians(i+offset_theta)))) + (IMAGE_SIZE/2)
@@ -44,9 +44,14 @@ class Sonar:
                     lidar_data_x_carthesian[i] = (self.lidar_data[i] *
                                                   SIZE_FACTOR *
                                                   np.cos(np.radians(i+offset_theta))) + (IMAGE_SIZE/2)
-                lidar_data_y_carthesian[i] = (self.lidar_data[i] *
-                                              SIZE_FACTOR *
-                                              np.sin(np.radians(i+offset_theta))) + (IMAGE_SIZE/2)
+                if x_mirrored is True:
+                    lidar_data_y_carthesian[i] = (-(self.lidar_data[i] *
+                                                  SIZE_FACTOR *
+                                                  np.sin(np.radians(i+offset_theta)))) + (IMAGE_SIZE/2)
+                else:
+                    lidar_data_y_carthesian[i] = (self.lidar_data[i] *
+                                                  SIZE_FACTOR *
+                                                  np.sin(np.radians(i+offset_theta))) + (IMAGE_SIZE/2)
 
         return lidar_data_x_carthesian, lidar_data_y_carthesian
 
@@ -79,11 +84,17 @@ class Sonar:
                 lidar_data_y.append(self.lidar_data[i]*50)
         return lidar_data_x, lidar_data_y
 
+    def pixel_to_metters(self, x, y):
+        x = x/SIZE_FACTOR
+        y = y/SIZE_FACTOR
+        return x, y
+
 
 def callback(msg):
+    rospy.loginfo(rospy.get_caller_id() + "   Got lidar data")
     sonar = Sonar(msg.ranges)
     sonar.create_template()
-    x, y = sonar.to_cathesian(offset_theta=-90, x_mirrored=True)
+    x, y = sonar.to_cathesian(offset_theta=-90, y_mirrored=True, x_mirrored=True)
     x, y = sonar.round_data(x, y)
     sonar.draw_points(x, y)
     sonar.saveimg()
