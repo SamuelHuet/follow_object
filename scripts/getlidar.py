@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 import cv2
+import time
 from matplotlib import pyplot as plt
 import random
 from PIL import Image
 import numpy as np
 import rospy
-from sensor_msgs.msg import LaserScan
+from sensor_msgs.msg import (LaserScan)
+from move_base_msgs.msg import MoveBaseActionFeedback
+from simple_navigation_goals import simple_navigation_goals
 import os
 
 
@@ -17,16 +20,18 @@ PATH = os.path.dirname(os.path.abspath(__file__))
 
 class Sonar:
 
-    def __init__(self, data):
-        self.lidar_data = data
+    def __init__(self):
+        self.lidar_data = [0]*360
         self.img = None
+
+    def new_data(self, data):
+        self.lidar_data = data
 
     def generate_fake_data(self):
         self.lidar_data = [random.randint(0, 10) for i in range(360)]
 
     def create_template(self):
         self.img = Image.new("RGB", (IMAGE_SIZE, IMAGE_SIZE), "#FFFFFF")
-        # self.img.paste((0, 0, 0), (245, 245, 255, 255))
 
     def show(self):
         self.img.show()
@@ -92,43 +97,53 @@ class Sonar:
         y = y/SIZE_FACTOR
         return x, y
 
+    def opencv_clutch(self, picture, lidar):
+        center = [0.0, 0.0]
+        ref_robot_coor_objet = [0.0 ,0.0, 0.0]
+        img = cv2.imread(PATH + "/" + lidar, 0)
+        template = cv2.imread(PATH + "/" + picture, 0)
+        method = eval('cv2.TM_CCOEFF')
+        res = cv2.matchTemplate(img, template, method)
+        left_top = cv2.minMaxLoc(res)[3]
+        center[0] = left_top[0] + 30
+        center[1] = left_top[1] + 28
+        ref_robot_coor_objet[0] = (center[0] - float(IMAGE_SIZE/2)) / float(SIZE_FACTOR)
+        ref_robot_coor_objet[1] = (center[1] - float(IMAGE_SIZE/2)) / float(SIZE_FACTOR)
+        ref_robot_coor_objet[2] = (np.sqrt(((center[0]-(float(IMAGE_SIZE/2)))**2)+((center[1]-(float(IMAGE_SIZE/2)))**2))) / float(SIZE_FACTOR)
+        return ref_robot_coor_objet
 
-def callback(msg):
+    def move_to_point(self, coord, move):
+        move.cancel_goal()
+        if coord[2] > 1.0:
+            move.go_to(coord[1], -coord[0], np.pi, frame="base_link", blocking=False)
+        else:
+            move._shutdown()
+
+
+def callback(msg, args):
+    move = args
     rospy.loginfo(rospy.get_caller_id() + "   Got lidar data")
-    sonar = Sonar(msg.ranges)
+    sonar = Sonar()
+    sonar.new_data(msg.ranges)
     sonar.create_template()
     x, y = sonar.to_cathesian(offset_theta=-90, y_mirrored=True, x_mirrored=True)
     x, y = sonar.round_data(x, y)
     sonar.draw_points(x, y)
     sonar.saveimg()
     rospy.loginfo(rospy.get_caller_id() + "   Image created")
-    # print(opencv_clutch('cercle.png', 'LIDAR.PNG'))
-    coord = opencv_clutch('cercle.png', 'LIDAR.PNG')
+    coord = sonar.opencv_clutch('cercle.png', 'LIDAR.PNG')
     rospy.loginfo(rospy.get_caller_id() + "   X = " + str(coord[0]) + "  Y = " + str(coord[1]))
     rospy.loginfo(rospy.get_caller_id() + "   Distance to target = " + str(coord[2]))
-
+    sonar.move_to_point(coord, move)
 
 def listener():
     rospy.init_node('listenerLidar', anonymous=True)
-    sub = rospy.Subscriber('/scan', LaserScan, callback)
+    move = simple_navigation_goals.SimpleNavigationGoals()
+    rospy.on_shutdown(move._shutdown)
+    sub = rospy.Subscriber('/scan', LaserScan, callback, (move))
     rospy.spin()
 
 
-def opencv_clutch(picture, lidar):
-    center = [0.0, 0.0]
-    ref_robot_coor_objet = [0.0 ,0.0, 0.0]
-    img = cv2.imread(PATH + "/" + lidar, 0)
-    template = cv2.imread(PATH + "/" + picture, 0)
-    method = eval('cv2.TM_CCOEFF')
-    res = cv2.matchTemplate(img, template, method)
-    left_top = cv2.minMaxLoc(res)[3]
-    center[0] = left_top[0] + 30
-    center[1] = left_top[1] + 28
-    ref_robot_coor_objet[0] = (center[0] - float(IMAGE_SIZE/2)) / float(SIZE_FACTOR)
-    ref_robot_coor_objet[1] = (center[1] - float(IMAGE_SIZE/2)) / float(SIZE_FACTOR)
-    ref_robot_coor_objet[2] = (np.sqrt(((center[0]-(float(IMAGE_SIZE/2)))**2)+((center[1]-(float(IMAGE_SIZE/2)))**2))) / float(SIZE_FACTOR)
-    return ref_robot_coor_objet
-
-
 if __name__ == '__main__':
+
     listener()
