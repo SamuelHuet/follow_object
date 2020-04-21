@@ -6,19 +6,10 @@ from matplotlib import pyplot as plt
 from PIL import Image
 
 import rospy
-import tf
 from sensor_msgs.msg import LaserScan
 from move_base_msgs.msg import MoveBaseActionFeedback
 from simple_navigation_goals import simple_navigation_goals
-from geometry_msgs.msg import Point
-
-import actionlib
-from move_base_msgs.msg import (
-    MoveBaseActionGoal,
-    MoveBaseAction,
-    MoveBaseGoal,
-    MoveBaseActionFeedback,
-)
+from geometry_msgs.msg import PoseWithCovarianceStamped
 
 SIZE_FACTOR = 60
 IMAGE_SIZE = 500
@@ -26,8 +17,12 @@ POINT_SIZE = 3
 
 PATH = os.path.dirname(os.path.abspath(__file__))
 TIMER_START = 0
-SUBSCRIBED_TOPIC = 0
+SUBSCRIBED_LIDAR_TOPIC = 0
+SUBSCRIBED_POSE_TOPIC = 0
 
+INITIAL_X = 0
+INITIAL_Y = 0
+FRAME_ID = 0
 
 class Sonar:
 
@@ -118,21 +113,20 @@ class Sonar:
 
     def move_to_point(self, coord, move):
         global TIMER_START
-        global SUBSCRIBED_TOPIC
+        global SUBSCRIBED_LIDAR_TOPIC
+        global INITIAL_X
+        global INITIAL_Y
+        global FRAME_ID
         move.cancel_goal()
         if coord[2] > 1.0:
             move.go_to(coord[1], -coord[0], np.pi, frame="base_scan", blocking=False)
             TIMER_START = rospy.Time.now()
         else:
             if (rospy.Time.now()-TIMER_START) >= rospy.Duration.from_sec(3):
-                SUBSCRIBED_TOPIC.unregister()
-                # house = simple_navigation_goals.SimpleNavigationGoals()
-                # rospy.on_shutdown(house._shutdown)
+                SUBSCRIBED_LIDAR_TOPIC.unregister()
                 move.cancel_all_goals()
-                # del(move)
-                # house = simple_navigation_goals.SimpleNavigationGoals()
                 rospy.loginfo(rospy.get_caller_id() + "   Coming back to home")
-                move.go_to(-3, 1, 0, frame="odom", blocking=True)
+                move.go_to(INITIAL_X, INITIAL_Y, 0, frame=FRAME_ID, blocking=True)
                 rospy.signal_shutdown("Scenario terminated")
             else:
                 move.cancel_all_goals()
@@ -156,16 +150,31 @@ def callback(msg, args):
     sonar.move_to_point(coord, move)
 
 
+def save_initial_pose(data):
+    global SUBSCRIBED_POSE_TOPIC
+    global INITIAL_X
+    global INITIAL_Y
+    global FRAME_ID
+    FRAME_ID = data.header.frame_id
+    INITIAL_X = data.pose.pose.position.x
+    INITIAL_Y = data.pose.pose.position.y
+    rospy.loginfo(rospy.get_caller_id() + "   Saving initial pose")
+    SUBSCRIBED_POSE_TOPIC.unregister()
+
+
 
 def listener():
     global TIMER_START
-    global SUBSCRIBED_TOPIC
+    global SUBSCRIBED_LIDAR_TOPIC
+    global SUBSCRIBED_POSE_TOPIC
+
     rospy.init_node('listenerLidar', anonymous=True)
     move = simple_navigation_goals.SimpleNavigationGoals()
     rospy.on_shutdown(move._shutdown)
-
     TIMER_START = rospy.Time.now()
-    SUBSCRIBED_TOPIC = rospy.Subscriber('/scan', LaserScan, callback, (move))
+
+    SUBSCRIBED_POSE_TOPIC = rospy.Subscriber('/amcl_pose', PoseWithCovarianceStamped, save_initial_pose)
+    SUBSCRIBED_LIDAR_TOPIC = rospy.Subscriber('/scan', LaserScan, callback, (move))
     rospy.spin()
 
 
