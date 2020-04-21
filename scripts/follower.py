@@ -6,10 +6,19 @@ from matplotlib import pyplot as plt
 from PIL import Image
 
 import rospy
+import tf
 from sensor_msgs.msg import LaserScan
 from move_base_msgs.msg import MoveBaseActionFeedback
 from simple_navigation_goals import simple_navigation_goals
+from geometry_msgs.msg import Point
 
+import actionlib
+from move_base_msgs.msg import (
+    MoveBaseActionGoal,
+    MoveBaseAction,
+    MoveBaseGoal,
+    MoveBaseActionFeedback,
+)
 
 SIZE_FACTOR = 60
 IMAGE_SIZE = 500
@@ -17,7 +26,7 @@ POINT_SIZE = 3
 
 PATH = os.path.dirname(os.path.abspath(__file__))
 TIMER_START = 0
-SUBCRIBED_TOPIC = 0
+SUBSCRIBED_TOPIC = 0
 
 
 class Sonar:
@@ -109,20 +118,25 @@ class Sonar:
 
     def move_to_point(self, coord, move):
         global TIMER_START
-        global SUBCRIBED_TOPIC
+        global SUBSCRIBED_TOPIC
         move.cancel_goal()
         if coord[2] > 1.0:
             move.go_to(coord[1], -coord[0], np.pi, frame="base_scan", blocking=False)
             TIMER_START = rospy.Time.now()
         else:
             if (rospy.Time.now()-TIMER_START) >= rospy.Duration.from_sec(3):
-                SUBCRIBED_TOPIC.unregister()
+                SUBSCRIBED_TOPIC.unregister()
                 # house = simple_navigation_goals.SimpleNavigationGoals()
                 # rospy.on_shutdown(house._shutdown)
                 move.cancel_all_goals()
-                move.go_to(-3, 0, 0, frame="map", blocking=True)
+                # del(move)
+                # house = simple_navigation_goals.SimpleNavigationGoals()
+                rospy.loginfo(rospy.get_caller_id() + "   Coming back to home")
+                move.go_to(-3, 1, 0, frame="odom", blocking=True)
+                rospy.signal_shutdown("Scenario terminated")
             else:
                 move.cancel_all_goals()
+
 
 
 def callback(msg, args):
@@ -145,13 +159,13 @@ def callback(msg, args):
 
 def listener():
     global TIMER_START
-    global SUBCRIBED_TOPIC
+    global SUBSCRIBED_TOPIC
     rospy.init_node('listenerLidar', anonymous=True)
     move = simple_navigation_goals.SimpleNavigationGoals()
     rospy.on_shutdown(move._shutdown)
 
     TIMER_START = rospy.Time.now()
-    SUBCRIBED_TOPIC = rospy.Subscriber('/scan', LaserScan, callback, (move))
+    SUBSCRIBED_TOPIC = rospy.Subscriber('/scan', LaserScan, callback, (move))
     rospy.spin()
 
 
