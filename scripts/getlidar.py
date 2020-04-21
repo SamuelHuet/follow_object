@@ -1,16 +1,14 @@
 #!/usr/bin/env python
 import cv2
-import time
-from matplotlib import pyplot as plt
-import random
-from PIL import Image
+import os
 import numpy as np
+from matplotlib import pyplot as plt
+from PIL import Image
+
 import rospy
-from sensor_msgs.msg import (LaserScan)
+from sensor_msgs.msg import LaserScan
 from move_base_msgs.msg import MoveBaseActionFeedback
 from simple_navigation_goals import simple_navigation_goals
-import os
-import time
 
 
 SIZE_FACTOR = 60
@@ -30,9 +28,6 @@ class Sonar:
 
     def new_data(self, data):
         self.lidar_data = data
-
-    def generate_fake_data(self):
-        self.lidar_data = [random.randint(0, 10) for i in range(360)]
 
     def create_template(self):
         self.img = Image.new("RGB", (IMAGE_SIZE, IMAGE_SIZE), "#FFFFFF")
@@ -81,25 +76,9 @@ class Sonar:
             lidar_data_y.append(int(round(lidar_data_y_old[i])))
         return lidar_data_x, lidar_data_y
 
-    def saveimg(self, ):
+    def saveimg(self):
         self.img.save(PATH + "/LIDAR.PNG")
 
-    def to_line(self):
-
-        lidar_data_x = []
-        lidar_data_y = []
-        for i in range(360):
-            lidar_data_x.append(i)
-            if np.isinf(self.lidar_data[i]):
-                lidar_data_y.append(0)
-            else:
-                lidar_data_y.append(self.lidar_data[i]*50)
-        return lidar_data_x, lidar_data_y
-
-    def pixel_to_metters(self, x, y):
-        x = x/SIZE_FACTOR
-        y = y/SIZE_FACTOR
-        return x, y
 
     def opencv_clutch(self, picture, lidar):
         center = [0.0, 0.0]
