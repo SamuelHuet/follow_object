@@ -11,6 +11,7 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 SIZE_FACTOR = 60
 IMAGE_SIZE = 500
 POINT_SIZE = 3
+MIN_CONFIANCE = 0.3
 
 
 class Follower:
@@ -25,6 +26,8 @@ class Follower:
         self.SUBSCRIBED_LIDAR_TOPIC = 0
         self.SUBSCRIBED_POSE_TOPIC = 0
         self.PATH = os.path.dirname(os.path.abspath(__file__))
+        self.go_to_x = 0
+        self.go_to_y = 0
         self.listener()
 
     def new_data(self, data):
@@ -81,13 +84,16 @@ class Follower:
         self.img.save(self.PATH + "/" + "LIDAR.PNG")
 
     def opencv_clutch(self, picture, lidar):
+        confiance = 1
+
         center = [0.0, 0.0]
         ref_robot_coor_objet = [0.0, 0.0, 0.0]
         img = cv2.imread(self.PATH + "/" + lidar, 0)
         template = cv2.imread(self.PATH + "/" + picture, 0)
-        method = eval('cv2.TM_CCOEFF')
+        method = eval('cv2.TM_CCOEFF_NORMED')
         res = cv2.matchTemplate(img, template, method)
         left_top = cv2.minMaxLoc(res)[3]
+        confiance = cv2.minMaxLoc(res)[1]
         center[0] = left_top[0] + 30
         center[1] = left_top[1] + 28
         ref_robot_coor_objet[0] = (center[0] - float(IMAGE_SIZE/2)) / float(SIZE_FACTOR)
@@ -105,12 +111,16 @@ class Follower:
         ref_robot_coor_objet[0] = x
         ref_robot_coor_objet[1] = y
 
+        if confiance > MIN_CONFIANCE:
+            self.go_to_x = x
+            self.go_to_y = y
+
         return ref_robot_coor_objet
 
     def move_to_point(self, coord):
         self.move.cancel_goal()
         if coord[2] > 1.0:
-            self.move.go_to(coord[1], -coord[0], np.pi, frame="base_scan", blocking=False)
+            self.move.go_to(self.go_to_y, -self.go_to_x, np.pi, frame="base_scan", blocking=False)
             self.TIMER_START = rospy.Time.now()
         else:
             if (rospy.Time.now()-self.TIMER_START) >= rospy.Duration.from_sec(3):
@@ -140,6 +150,8 @@ class Follower:
         self.frame_id = data.header.frame_id
         self.initial_x = data.pose.pose.position.x
         self.initial_y = data.pose.pose.position.y
+        self.go_to_x = data.pose.pose.position.x
+        self.go_to_y = data.pose.pose.position.y
         rospy.loginfo(rospy.get_caller_id() + "   Saving initial pose")
         self.SUBSCRIBED_POSE_TOPIC.unregister()
 
