@@ -54,22 +54,31 @@ _[![ROS Melodic](https://img.shields.io/badge/ROS-Melodic-red)](http://wiki.ros.
 
 ## Installation
 
-Simply clone this repository on your computer and compile the project using catkin_make:
+First clone this repository on your computer and compile the project using catkin_make:
 ```
 $ cd ~/catkin_ws/src
-$ git clone https://github.com/SamuelHuet/follow_objet.git
-$ cd ~/catkin_ws
-$ catkin_make
+$ git clone https://github.com/SamuelHuet/follow_object.git
 ```
 
+Copy the map folder into your `home/` folder and `catkin_make`
+```
+$ cp -r follow_object/map/ ~/
+$ cd ~/catkin_ws && catkin_make
+```
+
+Change the first line of `~/map/map.yaml` with your home directory
+```
+image: /home/user/map_friendly/map.pgm
+```
 ## How To
 
 Launch Gazebo et Rviz with the full stack navigation
 ```
-$ roslaunch turtlebot3_gazebo turtlebot3_house.launch
-$ roslaunch turtlebot3_navigation turtlebot3_navigation.launch map_file:=$HOME/map.yaml
+$ roslaunch turtlebot3_gazebo turtlebot3_house_animated_friendly_no_plugin.launch
+$ roslaunch turtlebot3_navigation turtlebot3_navigation.launch map_file:=$HOME/map/map.yaml
 $ rosrun follow_object follower.py
 ```
+Enjoy
 
 ## Usage
 
