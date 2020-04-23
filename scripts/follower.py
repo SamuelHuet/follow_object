@@ -28,6 +28,7 @@ class Follower:
         self.PATH = os.path.dirname(os.path.abspath(__file__))
         self.go_to_x = 0
         self.go_to_y = 0
+        self.distance = 1
         self.listener()
 
     def new_data(self, data):
@@ -69,8 +70,10 @@ class Follower:
     def draw_points(self, lidar_data_x, lidar_data_y):
         border = (POINT_SIZE-1)/2
         for i in range(360):
-            self.img.paste((0, 0, 0), (lidar_data_x[i]-border, lidar_data_y[i]-border,
-                                       lidar_data_x[i]+border, lidar_data_y[i]+border))
+            self.img.paste((0, 0, 0), (lidar_data_x[i]-border,
+                                       lidar_data_y[i]-border,
+                                       lidar_data_x[i]+border,
+                                       lidar_data_y[i]+border))
 
     def round_data(self, lidar_data_x_old, lidar_data_y_old):
         lidar_data_x = []
@@ -114,20 +117,27 @@ class Follower:
         if confiance > MIN_CONFIANCE:
             self.go_to_x = x
             self.go_to_y = y
+            self.distance = R
 
-        return ref_robot_coor_objet
+        # return ref_robot_coor_objet
 
-    def move_to_point(self, coord):
+    def move_to_point(self):
         self.move.cancel_goal()
-        if coord[2] > 1.0:
-            self.move.go_to(self.go_to_y, -self.go_to_x, np.pi, frame="base_scan", blocking=False)
+        if self.distance >= 1.0:
+            self.move.go_to(self.go_to_y,
+                            -self.go_to_x, np.pi,
+                            frame="base_scan", blocking=False)
             self.TIMER_START = rospy.Time.now()
         else:
             if (rospy.Time.now()-self.TIMER_START) >= rospy.Duration.from_sec(3):
                 self.SUBSCRIBED_LIDAR_TOPIC.unregister()
                 self.move.cancel_all_goals()
                 rospy.loginfo(rospy.get_caller_id() + "   Coming back to home")
-                self.move.go_to(self.initial_x, self.initial_y, 0, frame=self.frame_id, blocking=True)
+                self.move.go_to(self.initial_x,
+                                self.initial_y,
+                                0,
+                                frame=self.frame_id,
+                                blocking=True)
                 rospy.signal_shutdown("Scenario terminated")
             else:
                 self.move.cancel_all_goals()
@@ -136,15 +146,20 @@ class Follower:
         rospy.loginfo(rospy.get_caller_id() + "   Got lidar data")
         self.new_data(data.ranges)
         self.create_template()
-        x, y = self.to_cathesian(offset_theta=-90, y_mirrored=True, x_mirrored=True)
+        x, y = self.to_cathesian(offset_theta=-90,
+                                 y_mirrored=True,
+                                 x_mirrored=True)
         x, y = self.round_data(x, y)
         self.draw_points(x, y)
         self.saveimg()
         rospy.loginfo(rospy.get_caller_id() + "   Image created")
-        coord = self.opencv_clutch('cercle.png', 'LIDAR.PNG')
-        rospy.loginfo(rospy.get_caller_id() + "   X = " + str(coord[0]) + "  Y = " + str(coord[1]))
-        rospy.loginfo(rospy.get_caller_id() + "   Distance to target = " + str(coord[2]))
-        self.move_to_point(coord)
+        self.opencv_clutch('cercle.png', 'LIDAR.PNG')
+        rospy.loginfo(rospy.get_caller_id() +
+                      "   X = " + str(self.go_to_x) +
+                      "   Y = " + str(self.go_to_y))
+        rospy.loginfo(rospy.get_caller_id() +
+                      "   Distance to target = " + str(self.distance))
+        self.move_to_point()
 
     def save_initial_pose(self, data):
         self.frame_id = data.header.frame_id
@@ -160,8 +175,12 @@ class Follower:
         self.move = simple_navigation_goals.SimpleNavigationGoals()
         rospy.on_shutdown(self.move._shutdown)
         self.TIMER_START = rospy.Time.now()
-        self.SUBSCRIBED_POSE_TOPIC = rospy.Subscriber('/amcl_pose', PoseWithCovarianceStamped, self.save_initial_pose)
-        self.SUBSCRIBED_LIDAR_TOPIC = rospy.Subscriber('/scan', LaserScan, self.callback)
+        self.SUBSCRIBED_POSE_TOPIC = rospy.Subscriber('/amcl_pose',
+                                                      PoseWithCovarianceStamped,
+                                                      self.save_initial_pose)
+        self.SUBSCRIBED_LIDAR_TOPIC = rospy.Subscriber('/scan',
+                                                       LaserScan,
+                                                       self.callback)
         rospy.spin()
 
 
