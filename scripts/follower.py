@@ -165,8 +165,8 @@ class Follower:
         self.frame_id = data.header.frame_id
         self.initial_x = data.pose.pose.position.x
         self.initial_y = data.pose.pose.position.y
-        self.go_to_x = data.pose.pose.position.x
-        self.go_to_y = data.pose.pose.position.y
+        # self.go_to_x = data.pose.pose.position.x
+        # self.go_to_y = data.pose.pose.position.y
         rospy.loginfo(rospy.get_caller_id() + "   Saving initial pose")
         self.SUBSCRIBED_POSE_TOPIC.unregister()
 
