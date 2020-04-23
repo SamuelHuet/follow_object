@@ -20,6 +20,7 @@ class Follower:
         self.lidar_data = [0]*360
         self.img = None
         self.TIMER_START = 0
+        self.timer_unspam = 0
         self.initial_x = 0
         self.initial_y = 0
         self.frame_id = 0
@@ -122,6 +123,9 @@ class Follower:
         # return ref_robot_coor_objet
 
     def move_to_point(self):
+        if (rospy.Time.now() - self.timer_unspam) < rospy.Duration.from_sec(1):
+            return
+        self.timer_unspam = rospy.Time.now()
         self.move.cancel_goal()
         if self.distance >= 1.0:
             self.move.go_to(self.go_to_y,
@@ -175,6 +179,7 @@ class Follower:
         self.move = simple_navigation_goals.SimpleNavigationGoals()
         rospy.on_shutdown(self.move._shutdown)
         self.TIMER_START = rospy.Time.now()
+        self.timer_unspam = rospy.Time.now()
         self.SUBSCRIBED_POSE_TOPIC = rospy.Subscriber('/amcl_pose',
                                                       PoseWithCovarianceStamped,
                                                       self.save_initial_pose)
