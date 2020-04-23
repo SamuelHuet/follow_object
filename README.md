@@ -64,14 +64,16 @@ $ catkin_make
 
 ## How To
 
+Launch Gazebo et Rviz with the full stack navigation
 ```
-$ cd ~/catkin_ws/src/follow_object
-$ python get_lidar.py
+$ roslaunch turtlebot3_gazebo turtlebot3_house.launch
+$ roslaunch turtlebot3_navigation turtlebot3_navigation.launch map_file:=$HOME/map.yaml
+$ rosrun follow_object follower.py
 ```
 
 ## Usage
 
-The `get_lidar.py` script read the data from the lidar and draw all the points in a PNG file. 
+The `follower.py` script read the data from the lidar and draw all the points in a PNG file.
 
 ## Meta
 
